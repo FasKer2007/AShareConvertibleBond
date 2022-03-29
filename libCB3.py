@@ -22,26 +22,19 @@ def _windChecker():
 
 def str2dt(strDate,sep='/'):
     # 早年python和wind功能不全时所写，可废止
-    '''convert yyyy/mm/dd or yyyy-mm-dd to datetime.datetime() as windpy used
-    default sep is '/',and can be set to '-' '''
-    print(strDate)
-    lst = strDate.split(sep)
     
-    year = int(lst[0]); mon = int (lst[1]); date = int(lst[2])
-    
-    return dt.date(year = year, month = mon, day = date)
+    return pd.to_datetime(strDate)
 
 def dt2str(d,sep='/'):
     # 早年python和wind功能不全时所写，可废止
-    return str(d.year)+sep+str(d.month)+sep+str(d.day)
+    return dt.strftime(d, "%Y" + sep + "%m" + sep + "%d")
     
 def myTDays(start, end):
     # 早年python和wind功能不全时所写，可废止。pd.to_datetime即可
     _windChecker()
     
-    dates = w.tdays(start, end).Data[0]
-    dates = [dt2str(d) for d in dates]
-    
+    dates = pd.datetime(w.tdays(start, end).Data[0]).apply(lambda x: dt.strftime(x, "%Y/%m/%d"))
+	
     return dates
         
 
@@ -55,28 +48,9 @@ def cicc_read_from_wind(code, field, start_date, end_date, *others):
     _windChecker()
 
     strCodes = ','.join(code)    
-    obj = w.wsd(strCodes, field, start_date, end_date, others)
+    _, df = w.wsd(strCodes, field, start_date, end_date, others, usedf=True)
 
-    time = [dt2str(t) for t in obj.Times]    
-    
-    data = np.array(obj.Data)
-    
-    if np.array(obj.Data).shape == (len(time), len(code)):
-        
-        data = np.array(obj.Data)
-    
-    elif np.array(obj.Data).shape == (len(code), len(time)):
-        
-        data = np.array(obj.Data).transpose()
-
-    else:        
-        
-        print('Error Code: ',obj.ErrorCode)
-        print('Data:', data)
-
-        raise ValueError("accidence with shape")
-
-    return pd.DataFrame(data, index = time, columns = code)
+    return df
 
 def tblUpdate(csvName, toDate, field, kwargs, method = 'api'):
     
@@ -88,10 +62,10 @@ def tblUpdate(csvName, toDate, field, kwargs, method = 'api'):
     kwargs：不行就''
     method：可以是api也可以是sql，取决于哪个方便
     '''
-        
+    # 读原表，并看看最后一次更新是什么日子    
     df = pd.read_csv(csvName, index_col=0)
     lastDayInDf = str(df.index[-1])
-    
+    # 取最后一天开始至今的交易日，若不大于1则停止，否则更新
     _windChecker()
     
     dates = w.tdays(lastDayInDf, toDate).Data[0]
@@ -104,7 +78,7 @@ def tblUpdate(csvName, toDate, field, kwargs, method = 'api'):
         
         print('No Need to update' + csvName)
         return df
-    
+    # 更新进行时，更新好了挂在df后面
     if method == 'api' or field == 'impliedvol':
         
         temp = cicc_read_from_wind(df.columns, field, dates[0], dates[-1], kwargs)       
@@ -122,7 +96,7 @@ def tblUpdate(csvName, toDate, field, kwargs, method = 'api'):
             temp *= 1000.0
             df = df.append(temp)
         
-        elif field == 'clause_conversion2_bondlot':
+        elif field == 'clause_conversion2_bondlot': #因为sql库是亿元为单位的
             
             temp *= 100000000.0
             df = df.append(temp)
@@ -135,7 +109,7 @@ def tblUpdate(csvName, toDate, field, kwargs, method = 'api'):
     return df        
     
 def get_issueamount(codes: List) -> pd.Series:
-    
+    # 取发行额
     _windChecker()
     strCode=','.join(codes)
     data=w.wss(strCode,'issue_amountact').Data[0]
