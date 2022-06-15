@@ -20,20 +20,22 @@ lstSpecial=['100016.SH','100096.SH','100567.SH','110009.SH',\
 def _windChecker():
     if not w.isconnected(): w.start()
 
-def str2dt(strDate,sep='/'):
-    # 早年python和wind功能不全时所写，可废止
-    
+	
+def str2dt(strDate):
+    '''早年缩短代码用的'''
     return pd.to_datetime(strDate)
 
+
 def dt2str(d,sep='/'):
-    # 早年python和wind功能不全时所写，可废止
-    return dt.strftime(d, "%Y" + sep + "%m" + sep + "%d")
+    '''早年缩短代码用的'''
+    return dt.strftime(d, sep.join(["%Y","%m","%d"]))
     
+	
 def myTDays(start, end):
-    # 早年python和wind功能不全时所写，可废止。pd.to_datetime即可
+    '''调万得取start, end之间的交易日'''
     _windChecker()
     
-    dates = pd.datetime(w.tdays(start, end).Data[0]).apply(lambda x: dt.strftime(x, "%Y/%m/%d"))
+    dates = pd.to_datetime(w.tdays(start, end).Data[0]).apply(lambda x: dt2str)
 	
     return dates
         
@@ -488,17 +490,9 @@ def frameStrategy(obj,
         dfRet['LOG:WEIGHT'][date] = ','.join([str(t) for t in list(dfAssetBook['w'])])
     
     return dfRet
-
-def strategyEasyBall(obj, codes, date, tempCodes, dfAssetBook):
-    
-    ea = obj.showEasyBallTbl(end=date)
-    ea['yes'] = True
-    
-    return ea['yes']
     
 
 def weaknessPerformance(obj):
-#    import strategy as st
     
     dfRet = pd.DataFrame(index=obj.DB['Amt'].index, columns=['StrbPrem', 'Ten-Days Change'])
     
