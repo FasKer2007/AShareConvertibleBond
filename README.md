@@ -18,13 +18,16 @@ Examples：
 obj2 = cb_data()
 
 求均价，非异常样本
+
 (obj2.matNormal * obj2.Close).apply(np.mean, axis=1)
 
 求平价90~110元转债平均溢价率
+
 (obj2.matNormal * obj2.ConvV.applymap(lambda x: 1 if 90 <= x < 110 else np.nan) *\
 obj2.ConvPrem).apply(np.mean, axis=1)
 
 求10日平均隐含波动率
+
 (obj2.matNormal * obj2.ImpliedVol).apply(np.mean, axis=1).rolling(10).mean()
 
 ## strategy3
