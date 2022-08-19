@@ -31,4 +31,5 @@ obj2.ConvPrem).apply(np.mean, axis=1)
 (obj2.matNormal * obj2.ImpliedVol).apply(np.mean, axis=1).rolling(10).mean()
 
 ## strategy3
-未完待续，不续别催
+里面有个frameStrategy,用法写在：
+【中金】转债量化策略框架2.0与Python实现[https://mp.weixin.qq.com/s/toDHJQTlC7E0MQLV0duiug]
